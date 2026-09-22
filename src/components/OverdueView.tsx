@@ -42,11 +42,11 @@ export const OverdueView: React.FC<OverdueViewProps> = ({ onSelectCustomer }) =>
       const q = search.toLowerCase();
       const parentEmi = emiAccounts.find((e) => e.emiId === i.emiId);
       return (
-        i.customerName.toLowerCase().includes(q) ||
-        i.customerMobile.includes(q) ||
-        i.installmentId.toLowerCase().includes(q) ||
+        (i.customerName || '').toLowerCase().includes(q) ||
+        (i.customerMobile || '').includes(q) ||
+        (i.installmentId || '').toLowerCase().includes(q) ||
         (parentEmi && (
-          parentEmi.productName.toLowerCase().includes(q) ||
+          (parentEmi.productName || '').toLowerCase().includes(q) ||
           (parentEmi.imeiNumber && parentEmi.imeiNumber.toLowerCase().includes(q)) ||
           (parentEmi.guarantorName && parentEmi.guarantorName.toLowerCase().includes(q)) ||
           (parentEmi.guarantorMobile && parentEmi.guarantorMobile.includes(q))

@@ -197,22 +197,22 @@ export const AddEmiModal: React.FC<AddEmiModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs overflow-y-auto">
-      <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs p-2.5 sm:p-4 md:p-6 flex justify-center items-start sm:items-center">
+      <div className="relative w-full max-w-2xl rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto sm:my-6 flex flex-col max-h-[calc(100dvh-1.25rem)] sm:max-h-[88vh]">
         {/* Header (Fixed) */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <CreditCard className="w-5 h-5" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Create New EMI Account</h3>
-              <p className="text-xs text-slate-500">Customer details, device IMEI, guarantor, interest & installments</p>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">Create New EMI Account</h3>
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">Customer details, device IMEI, guarantor, interest & installments</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -221,22 +221,22 @@ export const AddEmiModal: React.FC<AddEmiModalProps> = ({
         {/* Form Form Container */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Scrollable Form Content */}
-          <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+          <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overscroll-contain flex-1">
             {error && (
-              <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-xs font-semibold text-red-600 dark:text-red-400">
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-xs font-semibold text-red-600 dark:text-red-400">
                 {error}
               </div>
             )}
 
           {/* Section 1: Customer Details */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3.5">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider pb-1 border-b border-slate-200 dark:border-slate-700/80">
               <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Customer Information (গ্রাহকের তথ্য)</span>
             </div>
 
             {/* Customer Name & Mobile */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Customer Name (গ্রাহকের নাম) *
@@ -291,13 +291,13 @@ export const AddEmiModal: React.FC<AddEmiModalProps> = ({
           </div>
 
           {/* Section 2: Guarantor Details */}
-          <div className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 space-y-3.5">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 space-y-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-400 uppercase tracking-wider pb-1 border-b border-amber-200/60 dark:border-amber-900/40">
               <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               <span>Guarantor Information (জামিনদারের তথ্য)</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Guarantor Name (জামিনদারের নাম)
@@ -333,13 +333,13 @@ export const AddEmiModal: React.FC<AddEmiModalProps> = ({
           </div>
 
           {/* Section 3: Product & IMEI */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3.5">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider pb-1 border-b border-slate-200 dark:border-slate-700/80">
               <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Product & IMEI Details (পণ্য ও আইএমইআই)</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Product / Device Name *
@@ -376,14 +376,14 @@ export const AddEmiModal: React.FC<AddEmiModalProps> = ({
           </div>
 
           {/* Section 4: Pricing, Interest & EMI Terms */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3.5">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider pb-1 border-b border-slate-200 dark:border-slate-700/80">
               <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Financing & EMI Terms (ইএমআই ও কিস্তির হিসাব)</span>
             </div>
 
             {/* Price, Down Payment, Interest Rate */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Total Product Price (৳) *
@@ -415,7 +415,7 @@ export const AddEmiModal: React.FC<AddEmiModalProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Interest Rate (% ইন্টারেস্ট শতকরা)
+                  Interest Rate (% ইন্টারেস্ট)
                 </label>
                 <div className="relative">
                   <input
@@ -433,35 +433,35 @@ export const AddEmiModal: React.FC<AddEmiModalProps> = ({
             </div>
 
             {/* Live Calculation Cards */}
-            <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 text-center">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 text-center">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                  Principal (ডাউন পেমেন্টের পর বাকি)
+                <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400 block uppercase truncate">
+                  Principal
                 </span>
-                <span className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-200">
+                <span className="text-xs sm:text-base font-extrabold text-slate-800 dark:text-slate-200 block truncate">
                   {formatCurrency(principalAfterDown)}
                 </span>
               </div>
-              <div className="border-x border-emerald-200 dark:border-emerald-800/60 px-1">
-                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 block uppercase">
-                  + Interest ({interestRate || 0}%)
+              <div className="border-x border-emerald-200 dark:border-emerald-800/60 px-0.5 sm:px-1">
+                <span className="text-[9px] sm:text-[10px] font-bold text-amber-600 dark:text-amber-400 block uppercase truncate">
+                  +{interestRate || 0}% Int.
                 </span>
-                <span className="text-sm sm:text-base font-extrabold text-amber-600 dark:text-amber-400">
+                <span className="text-xs sm:text-base font-extrabold text-amber-600 dark:text-amber-400 block truncate">
                   {formatCurrency(interestAmount)}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 block uppercase">
-                  Total Repayable (মোট ঋণ)
+                <span className="text-[9px] sm:text-[10px] font-bold text-emerald-700 dark:text-emerald-300 block uppercase truncate">
+                  Total Financed
                 </span>
-                <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs sm:text-base font-black text-emerald-600 dark:text-emerald-400 block truncate">
                   {formatCurrency(totalFinanced)}
                 </span>
               </div>
             </div>
 
             {/* Tenure & Monthly Amount & Due Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Total EMI Months *

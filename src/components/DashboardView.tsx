@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   DollarSign,
   Users,
@@ -13,10 +13,13 @@ import {
   Search,
   Smartphone,
   Hash,
+  Filter,
+  ChevronRight,
+  User,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { Installment } from '../types';
+import { Customer, EmiAccount, Installment } from '../types';
 import {
   diffDaysInDhaka,
   formatCurrency,
@@ -42,38 +45,159 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { isAdmin } = useAuth();
 
   const [selectedInstallmentForPayment, setSelectedInstallmentForPayment] = useState<Installment | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [quickLookupQuery, setQuickLookupQuery] = useState('');
+  const [customerEmiFilter, setCustomerEmiFilter] = useState<'ALL_ACTIVE' | 'DUE_TODAY' | 'OVERDUE' | 'ALL'>('ALL_ACTIVE');
 
   const todayDhaka = getTodayDhaka();
 
   // Metrics calculation
-  const dueTodayInstallments = installments.filter(
-    (i) => i.dueDate === todayDhaka && i.status !== 'PAID' && i.remainingAmount > 0
-  );
-  const dueTodayTotal = dueTodayInstallments.reduce((sum, i) => sum + i.remainingAmount, 0);
+  const dueTodayInstallments = useMemo(() => {
+    return installments.filter(
+      (i) => i.dueDate === todayDhaka && i.status !== 'PAID' && (i.remainingAmount || 0) > 0
+    );
+  }, [installments, todayDhaka]);
+
+  const dueTodayTotal = useMemo(() => {
+    return dueTodayInstallments.reduce((sum, i) => sum + (i.remainingAmount || 0), 0);
+  }, [dueTodayInstallments]);
 
   // Today's collections
-  const todayPayments = payments.filter((p) => p.paymentDate === todayDhaka);
-  const todayCollectedTotal = todayPayments.reduce((sum, p) => sum + p.amount, 0);
+  const todayPayments = useMemo(() => {
+    return payments.filter((p) => p.paymentDate === todayDhaka);
+  }, [payments, todayDhaka]);
+
+  const todayCollectedTotal = useMemo(() => {
+    return todayPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  }, [todayPayments]);
 
   // Overdue
-  const overdueInstallments = installments
-    .filter((i) => i.status === 'OVERDUE' && i.remainingAmount > 0)
-    .sort((a, b) => (b.lateDays || 0) - (a.lateDays || 0));
-  const overdueTotal = overdueInstallments.reduce((sum, i) => sum + i.remainingAmount, 0);
+  const overdueInstallments = useMemo(() => {
+    return installments
+      .filter((i) => i.status === 'OVERDUE' && (i.remainingAmount || 0) > 0)
+      .sort((a, b) => (b.lateDays || 0) - (a.lateDays || 0));
+  }, [installments]);
+
+  const overdueTotal = useMemo(() => {
+    return overdueInstallments.reduce((sum, i) => sum + (i.remainingAmount || 0), 0);
+  }, [overdueInstallments]);
 
   // Total Outstanding
-  const activeEmis = emiAccounts.filter((e) => e.status !== 'COMPLETED');
-  const totalOutstandingBalance = installments
-    .filter((i) => i.status !== 'PAID')
-    .reduce((sum, i) => sum + i.remainingAmount, 0);
+  const activeEmis = useMemo(() => {
+    return emiAccounts.filter((e) => e.status !== 'COMPLETED');
+  }, [emiAccounts]);
+
+  const totalOutstandingBalance = useMemo(() => {
+    return installments
+      .filter((i) => i.status !== 'PAID')
+      .reduce((sum, i) => sum + (i.remainingAmount || 0), 0);
+  }, [installments]);
 
   // Next 7 days upcoming
-  const upcomingNext7Days = installments.filter((i) => {
-    if (i.status === 'PAID') return false;
-    const daysUntil = diffDaysInDhaka(i.dueDate, todayDhaka);
-    return daysUntil > 0 && daysUntil <= 7;
-  });
+  const upcomingNext7Days = useMemo(() => {
+    return installments.filter((i) => {
+      if (i.status === 'PAID') return false;
+      const daysUntil = diffDaysInDhaka(i.dueDate, todayDhaka);
+      return daysUntil > 0 && daysUntil <= 7;
+    });
+  }, [installments, todayDhaka]);
+
+  // Customer Active EMI Summary Cards Data
+  const customerEmiSummaries = useMemo(() => {
+    const list: Array<{
+      customer: Customer;
+      activeEmi: EmiAccount | null;
+      allEmis: EmiAccount[];
+      totalInstallments: number;
+      paidInstallments: number;
+      remainingInstallments: number;
+      completionPercentage: number;
+      nextDueInstallment: Installment | null;
+      isOverdue: boolean;
+      isDueToday: boolean;
+    }> = [];
+
+    const activeCustomers = customers.filter((c) => c.status !== 'ARCHIVED');
+
+    for (const customer of activeCustomers) {
+      const customerEmis = (customer.emiAccounts || []).filter((e) => Boolean(e));
+      const customerInsts = (customer.installments || []).filter((i) => Boolean(i));
+
+      // Find primary active EMI (or latest EMI)
+      const primaryActiveEmi =
+        customerEmis.find((e) => e.status === 'ACTIVE') ||
+        customerEmis[0] ||
+        null;
+
+      if (!primaryActiveEmi && customerEmis.length === 0) {
+        continue;
+      }
+
+      const relevantInsts = primaryActiveEmi
+        ? customerInsts.filter((i) => i.emiId === primaryActiveEmi.emiId)
+        : customerInsts;
+
+      const totalCount = relevantInsts.length || (primaryActiveEmi ? primaryActiveEmi.totalEmiMonths : 0);
+      const paidCount = relevantInsts.filter((i) => i.status === 'PAID').length;
+      const remainingCount = Math.max(0, totalCount - paidCount);
+      const completionPct = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+
+      // Find next unpaid installment
+      const unpaidSorted = relevantInsts
+        .filter((i) => i.status !== 'PAID' && (i.remainingAmount || 0) > 0)
+        .sort((a, b) => (a.installmentNumber || 0) - (b.installmentNumber || 0));
+
+      const nextDue = unpaidSorted[0] || null;
+      const hasOverdue = relevantInsts.some((i) => i.status === 'OVERDUE' && (i.remainingAmount || 0) > 0);
+      const hasDueToday = relevantInsts.some((i) => i.dueDate === todayDhaka && i.status !== 'PAID');
+
+      list.push({
+        customer,
+        activeEmi: primaryActiveEmi,
+        allEmis: customerEmis,
+        totalInstallments: totalCount,
+        paidInstallments: paidCount,
+        remainingInstallments: remainingCount,
+        completionPercentage: completionPct,
+        nextDueInstallment: nextDue,
+        isOverdue: hasOverdue,
+        isDueToday: hasDueToday,
+      });
+    }
+
+    return list;
+  }, [customers, todayDhaka]);
+
+  // Filtered customer EMI summaries for the active list
+  const filteredCustomerSummaries = useMemo(() => {
+    const q = customerSearchQuery.trim().toLowerCase();
+    return customerEmiSummaries.filter((item) => {
+      // Search filter
+      if (q) {
+        const matchesName = (item.customer.name || '').toLowerCase().includes(q);
+        const matchesMobile = (item.customer.mobileNumber || '').includes(q);
+        const matchesCustomId = (item.customer.customId || '').toLowerCase().includes(q);
+        const matchesProduct = (item.activeEmi?.productName || '').toLowerCase().includes(q);
+        const matchesImei = (item.activeEmi?.imeiNumber || '').toLowerCase().includes(q);
+        if (!matchesName && !matchesMobile && !matchesCustomId && !matchesProduct && !matchesImei) {
+          return false;
+        }
+      }
+
+      // Tab filter
+      if (customerEmiFilter === 'DUE_TODAY') {
+        return item.isDueToday;
+      }
+      if (customerEmiFilter === 'OVERDUE') {
+        return item.isOverdue;
+      }
+      if (customerEmiFilter === 'ALL_ACTIVE') {
+        return item.activeEmi && item.activeEmi.status === 'ACTIVE';
+      }
+
+      return true;
+    });
+  }, [customerEmiSummaries, customerSearchQuery, customerEmiFilter]);
 
   return (
     <div className="space-y-6 pb-16 lg:pb-8">
@@ -181,6 +305,197 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Customer Active EMI Plans & Installment Progress (Clean & Uncluttered) */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-emerald-500" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Active EMI Plans & Installment Progress
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Installment progress (Paid vs. Total) for active customer plans
+            </p>
+          </div>
+
+          {/* Search & Filter Controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-56">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="Filter by name, mobile, device..."
+                value={customerSearchQuery}
+                onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-emerald-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCustomerEmiFilter('ALL_ACTIVE')}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                  customerEmiFilter === 'ALL_ACTIVE'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                Active ({customerEmiSummaries.filter((s) => s.activeEmi?.status === 'ACTIVE').length})
+              </button>
+              <button
+                onClick={() => setCustomerEmiFilter('DUE_TODAY')}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                  customerEmiFilter === 'DUE_TODAY'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                Due Today ({customerEmiSummaries.filter((s) => s.isDueToday).length})
+              </button>
+              <button
+                onClick={() => setCustomerEmiFilter('OVERDUE')}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                  customerEmiFilter === 'OVERDUE'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                Overdue ({customerEmiSummaries.filter((s) => s.isOverdue).length})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Clean, Non-Cluttered List / Table */}
+        {filteredCustomerSummaries.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-xs">
+            No active customer EMI plans match the filter.
+          </div>
+        ) : (
+          <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800/80">
+            {filteredCustomerSummaries.map((item) => {
+              const {
+                customer,
+                activeEmi,
+                totalInstallments,
+                paidInstallments,
+                completionPercentage,
+                nextDueInstallment,
+                isOverdue,
+                isDueToday,
+              } = item;
+
+              return (
+                <div
+                  key={customer.customerId}
+                  className="py-3.5 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3.5 group"
+                >
+                  {/* Customer & Device Column */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => onSelectCustomer(customer.customerId)}
+                        className="font-bold text-sm text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer text-left truncate"
+                      >
+                        {customer.name}
+                      </button>
+                      {customer.customId && (
+                        <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          {customer.customId}
+                        </span>
+                      )}
+                      {isOverdue ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                          Overdue
+                        </span>
+                      ) : isDueToday ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                          Due Today
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
+                      <a
+                        href={`tel:${customer.mobileNumber}`}
+                        className="hover:text-emerald-600 dark:hover:text-emerald-400 font-medium"
+                      >
+                        {customer.mobileNumber}
+                      </a>
+                      {activeEmi && (
+                        <>
+                          <span>•</span>
+                          <span className="text-slate-700 dark:text-slate-300 font-medium flex items-center gap-1">
+                            <Smartphone className="w-3 h-3 text-slate-400" />
+                            {activeEmi.productName}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Installment Progress Bar & Counter */}
+                  <div className="w-full md:w-56 shrink-0">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-slate-600 dark:text-slate-300 font-medium">
+                        <strong className="text-emerald-600 dark:text-emerald-400">{paidInstallments}</strong> of {totalInstallments} Paid
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-500">{completionPercentage}%</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Balance & Next Due Info */}
+                  <div className="flex items-center justify-between md:justify-end gap-5 text-right shrink-0">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Remaining Due</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">
+                        {formatCurrency(customer.remainingAmount)}
+                      </span>
+                    </div>
+
+                    {nextDueInstallment && (
+                      <div className="text-left md:text-right min-w-[90px]">
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">
+                          Next (#{nextDueInstallment.installmentNumber})
+                        </span>
+                        <span
+                          className={`text-xs font-bold ${
+                            isOverdue
+                              ? 'text-red-600 dark:text-red-400'
+                              : isDueToday
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {formatDhakaDate(nextDueInstallment.dueDate)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    <button
+                      onClick={() => onSelectCustomer(customer.customerId)}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-950/30 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer"
+                      title="View Customer Details"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Main Content Columns */}
@@ -329,7 +644,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
                         <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                           <span>Due Date: {formatDhakaDate(inst.dueDate)}</span>
-                          {inst.fine > 0 && <span className="text-red-500 font-bold">+Fine: {formatCurrency(inst.fine)}</span>}
+                          {(inst.fine || 0) > 0 && <span className="text-red-500 font-bold">+Fine: {formatCurrency(inst.fine)}</span>}
                           {(inst.extraCharge || 0) > 0 && (
                             <span className="text-amber-600 font-bold">+2%: {formatCurrency(inst.extraCharge)}</span>
                           )}
@@ -340,23 +655,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
                       </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-center">
-                      <a
-                        href={`tel:${inst.customerMobile}`}
-                        className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                      >
-                        Call
-                      </a>
-                      <button
-                        onClick={() => setSelectedInstallmentForPayment(inst)}
-                        className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
-                      >
-                        Mark Paid
-                      </button>
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <a
+                          href={`tel:${inst.customerMobile}`}
+                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                        >
+                          Call
+                        </a>
+                        <button
+                          onClick={() => setSelectedInstallmentForPayment(inst)}
+                          className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
+                        >
+                          Mark Paid
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
               )}
             </div>
           </div>
@@ -419,8 +734,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <input
                 type="text"
                 placeholder="Search by customer or phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={quickLookupQuery}
+                onChange={(e) => setQuickLookupQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-emerald-500"
               />
             </div>
@@ -430,10 +745,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 .filter((c) => c.status !== 'ARCHIVED')
                 .filter(
                   (c) =>
-                    !searchQuery ||
-                    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.mobileNumber.includes(searchQuery) ||
-                    c.customId.toLowerCase().includes(searchQuery.toLowerCase())
+                    !quickLookupQuery ||
+                    (c.name || '').toLowerCase().includes(quickLookupQuery.toLowerCase()) ||
+                    (c.mobileNumber || '').includes(quickLookupQuery) ||
+                    (c.customId || '').toLowerCase().includes(quickLookupQuery.toLowerCase())
                 )
                 .slice(0, 5)
                 .map((c) => (

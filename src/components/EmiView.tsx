@@ -44,9 +44,9 @@ export const EmiView: React.FC<EmiViewProps> = ({ onOpenAddEmi, onSelectCustomer
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
-        e.productName.toLowerCase().includes(q) ||
-        e.customerName.toLowerCase().includes(q) ||
-        e.customerMobile.includes(q) ||
+        (e.productName || '').toLowerCase().includes(q) ||
+        (e.customerName || '').toLowerCase().includes(q) ||
+        (e.customerMobile || '').includes(q) ||
         (e.imeiNumber && e.imeiNumber.toLowerCase().includes(q)) ||
         (e.guarantorName && e.guarantorName.toLowerCase().includes(q)) ||
         (e.guarantorMobile && e.guarantorMobile.includes(q))

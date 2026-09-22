@@ -33,27 +33,36 @@ export function getTomorrowDhaka(): string {
  * Formats a YYYY-MM-DD date string into human-readable format.
  * E.g., "17 Sep 2026" or "17 September 2026"
  */
-export function formatDhakaDate(dateStr: string, full = false): string {
-  if (!dateStr) return '';
-  const [y, m, d] = dateStr.split('-').map(Number);
-  if (!y || !m || !d) return dateStr;
+export function formatDhakaDate(dateStr?: string | null, full = false): string {
+  if (!dateStr || typeof dateStr !== 'string') return '-';
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length < 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) return dateStr;
+  const [y, m, d] = parts;
 
-  const date = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Dhaka',
-    day: 'numeric',
-    month: full ? 'long' : 'short',
-    year: 'numeric',
-  }).format(date);
+  try {
+    const date = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Dhaka',
+      day: 'numeric',
+      month: full ? 'long' : 'short',
+      year: 'numeric',
+    }).format(date);
+  } catch {
+    return dateStr;
+  }
 }
 
 /**
  * Calculate difference in whole calendar days between two YYYY-MM-DD dates (d1 - d2).
  * Positive means d1 is later than d2.
  */
-export function diffDaysInDhaka(d1: string, d2: string): number {
-  const [y1, m1, day1] = d1.split('-').map(Number);
-  const [y2, m2, day2] = d2.split('-').map(Number);
+export function diffDaysInDhaka(d1?: string | null, d2?: string | null): number {
+  if (!d1 || !d2 || typeof d1 !== 'string' || typeof d2 !== 'string') return 0;
+  const parts1 = d1.split('-').map(Number);
+  const parts2 = d2.split('-').map(Number);
+  if (parts1.length < 3 || parts2.length < 3 || isNaN(parts1[0]) || isNaN(parts2[0])) return 0;
+  const [y1, m1, day1] = parts1;
+  const [y2, m2, day2] = parts2;
   const utc1 = Date.UTC(y1, m1 - 1, day1);
   const utc2 = Date.UTC(y2, m2 - 1, day2);
   const msPerDay = 1000 * 60 * 60 * 24;
@@ -63,8 +72,11 @@ export function diffDaysInDhaka(d1: string, d2: string): number {
 /**
  * Add N calendar months to a YYYY-MM-DD date, properly handling month ends (e.g. Jan 31 -> Feb 28).
  */
-export function addMonthsToDate(dateStr: string, monthsToAdd: number): string {
-  const [year, month, day] = dateStr.split('-').map(Number);
+export function addMonthsToDate(dateStr?: string | null, monthsToAdd = 0): string {
+  if (!dateStr || typeof dateStr !== 'string') return getTodayDhaka();
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length < 3 || isNaN(parts[0])) return dateStr;
+  const [year, month, day] = parts;
   let targetYear = year;
   let targetMonth = month - 1 + monthsToAdd; // 0-indexed month
 
@@ -72,9 +84,8 @@ export function addMonthsToDate(dateStr: string, monthsToAdd: number): string {
   targetMonth = ((targetMonth % 12) + 12) % 12;
 
   // Find max days in target month
-  // Day 0 of next month gives the last day of target month
   const maxDays = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
-  const targetDay = Math.min(day, maxDays);
+  const targetDay = Math.min(day || 1, maxDays);
 
   const yStr = String(targetYear).padStart(4, '0');
   const mStr = String(targetMonth + 1).padStart(2, '0');
@@ -85,11 +96,11 @@ export function addMonthsToDate(dateStr: string, monthsToAdd: number): string {
 /**
  * Format currency in Bangladeshi Taka (৳).
  */
-export function formatCurrency(amount: number, symbol = '৳'): string {
-  if (isNaN(amount)) return `${symbol}0`;
+export function formatCurrency(amount: number | undefined | null, symbol = '৳'): string {
+  if (amount === undefined || amount === null || isNaN(Number(amount))) return `${symbol}0`;
   const formatted = new Intl.NumberFormat('en-IN', {
     maximumFractionDigits: 0,
-  }).format(Math.round(amount));
+  }).format(Math.round(Number(amount)));
   return `${symbol}${formatted}`;
 }
 

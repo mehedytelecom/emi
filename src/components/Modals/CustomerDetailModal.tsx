@@ -128,28 +128,28 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs overflow-y-auto">
-        <div className="w-full max-w-4xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-6 flex flex-col max-h-[90vh]">
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs p-2.5 sm:p-4 md:p-6 flex justify-center items-start sm:items-center">
+        <div className="relative w-full max-w-4xl rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto sm:my-6 flex flex-col max-h-[calc(100dvh-1.25rem)] sm:max-h-[88vh]">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-base sm:text-lg shadow-xs shrink-0">
                 {customer.name[0]?.toUpperCase()}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">{customer.name}</h2>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-300">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate max-w-[180px] sm:max-w-xs">{customer.name}</h2>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-[11px] sm:text-xs font-mono font-semibold text-slate-700 dark:text-slate-300 shrink-0">
                     {customer.customId}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-[11px] sm:text-xs text-slate-500 truncate">
                   Added on {formatDhakaDate(customer.createdAt.slice(0, 10))}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {isAdmin && !isEditing && (
                 <button
                   onClick={startEdit}
@@ -168,7 +168,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-5 sm:space-y-6">
             {/* Edit Mode Form */}
             {isEditing ? (
               <form onSubmit={handleSaveEdit} className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 space-y-3">
@@ -274,8 +274,8 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </form>
             ) : (
               /* Contact Cards & Quick Dial */
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
                   <span className="text-[11px] font-semibold text-slate-400 block mb-1">Customer Phone</span>
                   <div className="flex items-center justify-between">
                     <a
@@ -302,7 +302,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                   )}
                 </div>
 
-                <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40">
                   <span className="text-[11px] font-bold text-amber-800 dark:text-amber-400 block mb-1">
                     Guarantor (জামিনদার)
                   </span>
@@ -336,7 +336,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                   )}
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 sm:col-span-2 md:col-span-1">
                   <span className="text-[11px] font-semibold text-slate-400 block mb-1">Customer Address</span>
                   <p className="text-xs font-medium text-slate-800 dark:text-slate-200 flex items-start gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
@@ -351,84 +351,82 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
               </div>
             )}
 
-            {/* Financial Overview Metrics (Requirement 4) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Total EMI Amount</span>
-                <p className="text-lg font-black text-slate-900 dark:text-white mt-1">
+            {/* Financial Overview Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="p-3 sm:p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400">Total Financed</span>
+                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5 sm:mt-1">
                   {formatCurrency(customer.totalEmiAmount)}
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40">
-                <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Total Paid</span>
-                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              <div className="p-3 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Total Paid</span>
+                <p className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5 sm:mt-1">
                   {formatCurrency(customer.paidAmount)}
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40">
-                <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">Remaining Balance</span>
-                <p className="text-lg font-black text-amber-600 dark:text-amber-400 mt-1">
+              <div className="p-3 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-amber-700 dark:text-amber-400">Remaining Due</span>
+                <p className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5 sm:mt-1">
                   {formatCurrency(customer.remainingAmount)}
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Installments Stat</span>
-                <div className="flex items-center gap-2 mt-1 text-xs font-bold">
+              <div className="p-3 sm:p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400">Installments Stat</span>
+                <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1 text-[11px] sm:text-xs font-bold flex-wrap">
                   <span className="text-emerald-500">{totalPaidCount} Paid</span>
                   <span>•</span>
                   <span className="text-red-500">{totalOverdueCount} Overdue</span>
-                  <span>•</span>
-                  <span className="text-slate-400">{totalUpcomingCount} Left</span>
                 </div>
               </div>
             </div>
 
-            {/* Tabs for Details */}
+            {/* Tabs for Details with responsive horizontal scrolling */}
             <div>
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-200 dark:border-slate-800 pb-2">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto">
                   <button
                     onClick={() => setActiveTab('schedule')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                       activeTab === 'schedule'
                         ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/60'
                     }`}
                   >
-                    Installment Schedule ({customerInstallments.length})
+                    Schedule ({customerInstallments.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('emis')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                       activeTab === 'emis'
                         ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/60'
                     }`}
                   >
-                    EMI Accounts ({customerEmis.length})
+                    EMI Plans ({customerEmis.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('payments')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                       activeTab === 'payments'
                         ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/60'
                     }`}
                   >
-                    Payment History ({customerPayments.length})
+                    Payments ({customerPayments.length})
                   </button>
                 </div>
 
                 {isAdmin && (
                   <button
                     onClick={() => onOpenAddEmiForCustomer(customer.customerId)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold cursor-pointer"
+                    className="self-start sm:self-center flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold cursor-pointer shrink-0"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>New EMI</span>
+                    <span>New EMI Plan</span>
                   </button>
                 )}
               </div>
