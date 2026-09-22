@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() && request.auth.token.email == 'mehedyhossain160619@gmail.com';
+    }
+
+    function userExists() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function currentUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isApprovedUser() {
+      return isBootstrappedAdmin() || (userExists() && currentUserData().status == 'APPROVED');
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (isApprovedUser() && currentUserData().role == 'ADMIN');
+    }
+
+    // USERS collection:
+    // Users can read their own user document. Admins can read all users to approve/manage.
+    // Users can create their own document with initial PENDING status (unless bootstrapped admin).
+    // Only Admins can approve, reject, or change user roles.
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      
+      allow create: if isSignedIn() && (
+        // Self-registration: must match UID and request PENDING status with VIEWER role
+        (request.auth.uid == userId && (
+          (isBootstrappedAdmin() && request.resource.data.role == 'ADMIN' && request.resource.data.status == 'APPROVED') ||
+          (request.resource.data.status == 'PENDING' && request.resource.data.role == 'VIEWER')
+        )) ||
+        isAdmin()
+      );
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == userId && 
+         // Self-update can only refresh profile details, not role or status
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'approvedBy', 'approvedAt']))
+      );
+
+      allow delete: if isAdmin() && request.auth.uid != userId;
+    }
+
+    // CUSTOMERS collection
+    match /customers/{customerId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+
+    // EMI ACCOUNTS collection
+    match /emi_accounts/{emiId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+
+    // INSTALLMENTS collection
+    match /installments/{installmentId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+
+    // PAYMENTS collection
+    match /payments/{paymentId} {
+      allow read: if isApprovedUser();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // NOTIFICATIONS collection
+    match /notifications/{notificationId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+
+    // SETTINGS collection
+    match /settings/{settingId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+  }
+}

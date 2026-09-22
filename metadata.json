@@ -1,0 +1,6 @@
+{
+  "name": "Mehedi Telecom EMI",
+  "description": "Personal customer EMI account management, installment tracking, and payment reminder system for Mehedi Telecom.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

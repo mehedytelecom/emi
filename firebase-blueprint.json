@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Authenticated user profile and authorization status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "Gmail address" },
+        "displayName": { "type": "string", "description": "Display name" },
+        "photoURL": { "type": "string", "description": "Avatar photo URL" },
+        "role": { "type": "string", "enum": ["ADMIN", "VIEWER"], "description": "Assigned authorization role" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED", "DISABLED"], "description": "Access approval status" },
+        "requestedAt": { "type": "string", "description": "ISO timestamp of access request" },
+        "approvedAt": { "type": "string", "description": "ISO timestamp of approval" },
+        "approvedBy": { "type": "string", "description": "UID of admin who approved" }
+      },
+      "required": ["uid", "email", "role", "status", "requestedAt"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer record containing embedded EMI accounts, installments, and payment logs to optimize Firestore quota",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string", "description": "Unique Customer ID" },
+        "customId": { "type": "string", "description": "Formatted customer code e.g. MT-1001" },
+        "name": { "type": "string", "description": "Customer full name", "maxLength": 150 },
+        "mobileNumber": { "type": "string", "description": "Primary mobile number", "maxLength": 20 },
+        "alternativeNumber": { "type": "string", "description": "Alternative mobile number", "maxLength": 20 },
+        "address": { "type": "string", "description": "Residential or shop address", "maxLength": 300 },
+        "nidNumber": { "type": "string", "description": "National ID Number (optional)", "maxLength": 50 },
+        "guarantorName": { "type": "string", "description": "Guarantor full name", "maxLength": 150 },
+        "guarantorMobile": { "type": "string", "description": "Guarantor mobile number", "maxLength": 20 },
+        "notes": { "type": "string", "description": "Customer notes and remarks", "maxLength": 1000 },
+        "totalEmiAmount": { "type": "number", "description": "Total EMI aggregate value" },
+        "paidAmount": { "type": "number", "description": "Total amount paid to date" },
+        "remainingAmount": { "type": "number", "description": "Total remaining balance" },
+        "activeEmiCount": { "type": "number", "description": "Number of active EMI plans" },
+        "status": { "type": "string", "enum": ["ACTIVE", "ARCHIVED"], "description": "Customer status" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of creation" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      },
+      "required": ["customerId", "name", "mobileNumber", "createdAt"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Configurable application, notification, late fine, and post-plan rules",
+      "type": "object",
+      "properties": {
+        "appName": { "type": "string", "description": "Application display name" },
+        "currency": { "type": "string", "description": "Currency symbol default ৳" },
+        "timeZone": { "type": "string", "description": "Timezone default Asia/Dhaka" },
+        "notificationEnabled": { "type": "boolean", "description": "Global notification toggle" },
+        "reminderOneDayBefore": { "type": "boolean", "description": "One-day before reminder toggle" },
+        "dueTodayNotification": { "type": "boolean", "description": "Due today reminder toggle" },
+        "overdueNotification": { "type": "boolean", "description": "Overdue reminder toggle" },
+        "lateFineNotification": { "type": "boolean", "description": "Late fine applied notification toggle" },
+        "notificationTime": { "type": "string", "description": "Time of day formatted HH:MM e.g. 09:00" },
+        "gracePeriodDays": { "type": "number", "description": "Default 7 days grace period" },
+        "lateFineType": { "type": "string", "enum": ["FIXED", "PERCENTAGE"], "description": "Fine calculation method" },
+        "lateFineAmount": { "type": "number", "description": "Fine amount in BDT or percentage" },
+        "postPlanChargeEnabled": { "type": "boolean", "description": "Post-plan extra charge toggle default enabled" },
+        "postPlanPercentage": { "type": "number", "description": "Extra percentage default 2" },
+        "postPlanFrequency": { "type": "string", "enum": ["MONTHLY"], "description": "Frequency default MONTHLY" },
+        "postPlanCalculationMethod": { "type": "string", "enum": ["CURRENT_OUTSTANDING", "ORIGINAL_OUTSTANDING"], "description": "Calculation base" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last configuration" },
+        "updatedBy": { "type": "string", "description": "Admin UID" }
+      },
+      "required": ["appName", "currency", "timeZone", "gracePeriodDays", "lateFineAmount", "postPlanPercentage"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles and approval status"
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Customer contact, profile details, and embedded EMI & installment schedules"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Setting" },
+      "description": "Application and business rule settings"
+    }
+  }
+}
