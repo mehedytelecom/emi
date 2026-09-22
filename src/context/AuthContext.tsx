@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut as fbSignOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, signInAnonymously, signOut as fbSignOut } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
 import { AppUser } from '../types';
@@ -14,6 +14,7 @@ interface AuthContextType {
   isPending: boolean;
   isRejectedOrDisabled: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithAdminPin: (pin: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Bootstrapped owner admin email from metadata
 const BOOTSTRAPPED_ADMIN_EMAIL = 'mehedyhossain160619@gmail.com';
+const DEFAULT_ADMIN_PIN = '160619';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -46,13 +48,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        const isOwner = firebaseUser.email?.toLowerCase() === BOOTSTRAPPED_ADMIN_EMAIL.toLowerCase();
+        const isOwner = firebaseUser.email?.toLowerCase() === BOOTSTRAPPED_ADMIN_EMAIL.toLowerCase() ||
+          firebaseUser.isAnonymous ||
+          localStorage.getItem('mehedi_admin_pin_auth') === 'true';
         
         // Optimistically set bootstrapped admin profile so owner gets instant access
         if (isOwner) {
           setUserProfile((prev) => prev || {
             uid: firebaseUser.uid,
-            email: firebaseUser.email || '',
+            email: firebaseUser.email || BOOTSTRAPPED_ADMIN_EMAIL,
             displayName: firebaseUser.displayName || 'Mehedi Hossain',
             photoURL: firebaseUser.photoURL || '',
             role: 'ADMIN',
@@ -72,8 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Create initial record
             const newProfile: AppUser = {
               uid: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              displayName: firebaseUser.displayName || 'User',
+              email: firebaseUser.email || BOOTSTRAPPED_ADMIN_EMAIL,
+              displayName: firebaseUser.displayName || (isOwner ? 'Mehedi Hossain' : 'Staff User'),
               photoURL: firebaseUser.photoURL || '',
               role: isOwner ? 'ADMIN' : 'VIEWER',
               status: isOwner ? 'APPROVED' : 'PENDING',
@@ -86,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserProfile(newProfile);
           } else {
             const data = snap.data() as AppUser;
-            // Ensure bootstrap admin email always has ADMIN role & APPROVED status
+            // Ensure bootstrap admin email or owner pin session always has ADMIN role & APPROVED status
             if (isOwner && (data.role !== 'ADMIN' || data.status !== 'APPROVED')) {
               await updateDoc(userRef, {
                 role: 'ADMIN',
@@ -148,8 +152,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithAdminPin = async (pin: string): Promise<boolean> => {
+    const cleanPin = pin.trim();
+    if (cleanPin === DEFAULT_ADMIN_PIN || cleanPin === '160619') {
+      try {
+        localStorage.setItem('mehedi_admin_pin_auth', 'true');
+        const cred = await signInAnonymously(auth);
+        const adminProfile: AppUser = {
+          uid: cred.user.uid,
+          email: BOOTSTRAPPED_ADMIN_EMAIL,
+          displayName: 'Mehedi Hossain (Admin)',
+          photoURL: '',
+          role: 'ADMIN',
+          status: 'APPROVED',
+          requestedAt: new Date().toISOString(),
+          approvedAt: new Date().toISOString(),
+          approvedBy: 'admin-pin',
+        };
+        try {
+          await setDoc(doc(db, 'users', cred.user.uid), adminProfile, { merge: true });
+        } catch (e) {
+          console.warn('Firestore set user profile sync note:', e);
+        }
+        setUserProfile(adminProfile);
+        return true;
+      } catch (err) {
+        console.error('PIN sign in error:', err);
+        // Fallback local admin state
+        setUserProfile({
+          uid: 'admin-mehedi-local',
+          email: BOOTSTRAPPED_ADMIN_EMAIL,
+          displayName: 'Mehedi Hossain',
+          photoURL: '',
+          role: 'ADMIN',
+          status: 'APPROVED',
+          requestedAt: new Date().toISOString(),
+        });
+        return true;
+      }
+    }
+    return false;
+  };
+
   const logout = async () => {
     try {
+      localStorage.removeItem('mehedi_admin_pin_auth');
       await fbSignOut(auth);
       setUserProfile(null);
     } catch (error) {
@@ -188,6 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isPending,
         isRejectedOrDisabled,
         signInWithGoogle,
+        signInWithAdminPin,
         logout,
         refreshProfile,
       }}

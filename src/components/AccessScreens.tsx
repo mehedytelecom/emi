@@ -4,18 +4,46 @@ import { useAuth } from '../context/AuthContext';
 import { PWAInstallButton } from './PWAInstallButton';
 
 export const LoginScreen: React.FC = () => {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInWithAdminPin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [authTab, setAuthTab] = useState<'pin' | 'google'>('pin');
+  const [adminPin, setAdminPin] = useState('');
 
-  const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       setErrorMsg(null);
       await signInWithGoogle();
+    } catch (err: any) {
+      console.error(err);
+      if (err?.code === 'auth/unauthorized-domain') {
+        setErrorMsg('Domain not authorized in Firebase Console. Please use Admin PIN login below.');
+        setAuthTab('pin');
+      } else {
+        setErrorMsg('Google sign in failed. Try Admin PIN login below.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePinLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminPin.trim()) {
+      setErrorMsg('Please enter your 6-digit Admin Security PIN.');
+      return;
+    }
+    try {
+      setLoading(true);
+      setErrorMsg(null);
+      const success = await signInWithAdminPin(adminPin.trim());
+      if (!success) {
+        setErrorMsg('Incorrect Admin PIN. Default PIN is 160619.');
+      }
     } catch (err: unknown) {
       console.error(err);
-      setErrorMsg('Failed to sign in with Google. Please try again.');
+      setErrorMsg('Authentication error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -30,7 +58,7 @@ export const LoginScreen: React.FC = () => {
 
       <main className="w-full max-w-md p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl text-center">
         {/* Brand Emblem */}
-        <div className="mx-auto w-20 h-20 mb-6 rounded-3xl bg-linear-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-4 ring-slate-800">
+        <div className="mx-auto w-20 h-20 mb-5 rounded-3xl bg-linear-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-4 ring-slate-800">
           <span className="text-3xl font-extrabold text-white">৳</span>
         </div>
 
@@ -41,9 +69,38 @@ export const LoginScreen: React.FC = () => {
           Personal EMI Management
         </p>
 
-        <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-          Customer installment tracking, automated overdue schedules, late fine calculators, and payment reminders.
-        </p>
+        {/* Tab switch between PIN and Google */}
+        <div className="flex bg-slate-950/80 p-1 rounded-2xl border border-slate-800 mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthTab('pin');
+              setErrorMsg(null);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+              authTab === 'pin'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>Admin PIN (Direct)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthTab('google');
+              setErrorMsg(null);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+              authTab === 'google'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>Google Account</span>
+          </button>
+        </div>
 
         {errorMsg && (
           <div className="mb-6 p-3.5 rounded-2xl bg-red-950/60 border border-red-800/80 text-xs font-medium text-red-300 flex items-center gap-2 text-left">
@@ -52,36 +109,73 @@ export const LoginScreen: React.FC = () => {
           </div>
         )}
 
-        <button
-          id="google-signin-btn"
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-100 active:scale-[0.98] text-slate-900 font-bold text-sm sm:text-base flex items-center justify-center gap-3 shadow-lg shadow-white/5 transition-all disabled:opacity-60 cursor-pointer"
-        >
-          {loading ? (
-            <RefreshCw className="w-5 h-5 animate-spin text-slate-700" />
-          ) : (
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-              />
-            </svg>
-          )}
-          <span>{loading ? 'Signing In...' : 'Sign in with Google'}</span>
-        </button>
+        {authTab === 'pin' ? (
+          <form onSubmit={handlePinLogin} className="space-y-4">
+            <div className="text-left">
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Admin Security PIN
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  maxLength={10}
+                  value={adminPin}
+                  onChange={(e) => setAdminPin(e.target.value)}
+                  placeholder="Enter PIN (Default: 160619)"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-700 text-slate-100 text-center text-lg tracking-widest font-mono focus:outline-none focus:border-emerald-500 transition"
+                  autoFocus
+                />
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5 text-center">
+                Master owner login for <strong className="text-emerald-400">Mehedi Hossain</strong>
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-3 shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-60 cursor-pointer"
+            >
+              {loading ? (
+                <RefreshCw className="w-5 h-5 animate-spin text-white" />
+              ) : (
+                <ShieldCheck className="w-5 h-5" />
+              )}
+              <span>{loading ? 'Verifying PIN...' : 'Login as Admin'}</span>
+            </button>
+          </form>
+        ) : (
+          <button
+            id="google-signin-btn"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-100 active:scale-[0.98] text-slate-900 font-bold text-sm sm:text-base flex items-center justify-center gap-3 shadow-lg shadow-white/5 transition-all disabled:opacity-60 cursor-pointer"
+          >
+            {loading ? (
+              <RefreshCw className="w-5 h-5 animate-spin text-slate-700" />
+            ) : (
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+            )}
+            <span>{loading ? 'Signing In...' : 'Sign in with Google'}</span>
+          </button>
+        )}
 
         <div className="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-500 flex flex-col gap-2">
           <div className="flex items-center justify-center gap-2 text-slate-400">
@@ -89,7 +183,7 @@ export const LoginScreen: React.FC = () => {
             <span className="font-semibold">Private & Restricted Access</span>
           </div>
           <p>
-            Only authorized Gmail accounts approved by Mehedi Telecom administrator can access customer and financial records.
+            Mehedi Telecom personal customer records and financial calculations.
           </p>
         </div>
       </main>
