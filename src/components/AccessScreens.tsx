@@ -190,6 +190,13 @@ export const AccessDeniedScreen: React.FC = () => {
 export const PendingApprovalScreen = AccessPendingScreen;
 
 export const LoadingScreen: React.FC = () => {
+  const [showFallback, setShowFallback] = useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShowFallback(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-950 text-slate-100">
       <div className="w-16 h-16 rounded-3xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-4 animate-bounce">
@@ -200,6 +207,16 @@ export const LoadingScreen: React.FC = () => {
         <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-500" />
         <span>Loading secure workspace...</span>
       </p>
+
+      {showFallback && (
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-6 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Reload If Taking Too Long</span>
+        </button>
+      )}
     </div>
   );
 };

@@ -162,67 +162,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Customers listener (single collection for all customer, EMI, and installment data)
     const unsubCustomers = onSnapshot(
       collection(db, 'customers'),
-      async (snap) => {
+      (snap) => {
         const list: Customer[] = [];
         snap.forEach((docSnap) => {
           const cust = docSnap.data() as Customer;
           list.push(cust);
         });
 
-        // Check if any customer is missing embedded EMI/Installment data from legacy collections
-        const missingData = list.some(
-          (c) => (!c.emiAccounts || c.emiAccounts.length === 0) && c.activeEmiCount > 0
-        );
-
-        if (missingData && isAdmin) {
-          try {
-            // One-time legacy migration read if needed
-            const emiSnap = await getDocs(collection(db, 'emi_accounts'));
-            const instSnap = await getDocs(collection(db, 'installments'));
-            const paySnap = await getDocs(collection(db, 'payments'));
-
-            const allEmis: EmiAccount[] = [];
-            emiSnap.forEach((d) => allEmis.push(d.data() as EmiAccount));
-
-            const allInsts: Installment[] = [];
-            instSnap.forEach((d) => allInsts.push(d.data() as Installment));
-
-            const allPays: Payment[] = [];
-            paySnap.forEach((d) => allPays.push(d.data() as Payment));
-
-            if (allEmis.length > 0) {
-              for (const cust of list) {
-                if (!cust.emiAccounts || cust.emiAccounts.length === 0) {
-                  const custEmis = allEmis
-                    .filter((e) => e.customerId === cust.customerId)
-                    .map((e) => cleanEmiForDb(e) as EmiAccount);
-                  const custInsts = allInsts
-                    .filter((i) => i.customerId === cust.customerId)
-                    .map((i) => cleanInstallmentForDb(i) as Installment);
-                  const custPays = allPays
-                    .filter((p) => p.customerId === cust.customerId)
-                    .map((p) => cleanPaymentForDb(p) as Payment);
-
-                  if (custEmis.length > 0) {
-                    cust.emiAccounts = custEmis;
-                    cust.installments = custInsts;
-                    cust.payments = custPays;
-                    // Persist consolidation into the customer document once
-                    await setDoc(doc(db, 'customers', cust.customerId), cust, { merge: true });
-                  }
-                }
-              }
-            }
-          } catch (migrationErr) {
-            console.warn('Legacy data merge check:', migrationErr);
-          }
-        }
-
         setCustomers(list);
         setLoading(false);
       },
       (err) => {
-        handleFirestoreError(err, OperationType.GET, 'customers');
+        console.error('Customers listener error:', err);
+        setError(err.message);
         setLoading(false);
       }
     );
@@ -304,7 +256,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
     });
-    return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return list.sort((a, b) => (b?.createdAt || '').localeCompare(a?.createdAt || ''));
   }, [customers]);
 
   // Notifications dynamically calculated in-memory from installments & settings

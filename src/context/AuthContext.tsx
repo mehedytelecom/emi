@@ -29,60 +29,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      setCurrentUser(firebaseUser);
+    // Safety fallback timeout to prevent infinite blank screen if network/auth stalls
+    const timeoutTimer = setTimeout(() => {
+      setLoading(false);
+    }, 4000);
 
-      if (!firebaseUser) {
-        setUserProfile(null);
-        setLoading(false);
-        return;
-      }
+    const unsubscribeAuth = onAuthStateChanged(
+      auth,
+      async (firebaseUser) => {
+        clearTimeout(timeoutTimer);
+        setCurrentUser(firebaseUser);
 
-      const userRef = doc(db, 'users', firebaseUser.uid);
+        if (!firebaseUser) {
+          setUserProfile(null);
+          setLoading(false);
+          return;
+        }
 
-      try {
-        const snap = await getDoc(userRef);
         const isOwner = firebaseUser.email?.toLowerCase() === BOOTSTRAPPED_ADMIN_EMAIL.toLowerCase();
-
-        if (!snap.exists()) {
-          // Create initial record
-          const newProfile: AppUser = {
+        
+        // Optimistically set bootstrapped admin profile so owner gets instant access
+        if (isOwner) {
+          setUserProfile((prev) => prev || {
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
-            displayName: firebaseUser.displayName || 'User',
+            displayName: firebaseUser.displayName || 'Mehedi Hossain',
             photoURL: firebaseUser.photoURL || '',
-            role: isOwner ? 'ADMIN' : 'VIEWER',
-            status: isOwner ? 'APPROVED' : 'PENDING',
+            role: 'ADMIN',
+            status: 'APPROVED',
             requestedAt: new Date().toISOString(),
-            approvedAt: isOwner ? new Date().toISOString() : undefined,
-            approvedBy: isOwner ? 'bootstrap' : undefined,
-          };
-
-          await setDoc(userRef, newProfile);
-          setUserProfile(newProfile);
-        } else {
-          const data = snap.data() as AppUser;
-          // Ensure bootstrap admin email always has ADMIN role & APPROVED status
-          if (isOwner && (data.role !== 'ADMIN' || data.status !== 'APPROVED')) {
-            await updateDoc(userRef, {
-              role: 'ADMIN',
-              status: 'APPROVED',
-              approvedAt: new Date().toISOString(),
-              approvedBy: 'bootstrap',
-            });
-            setUserProfile({ ...data, role: 'ADMIN', status: 'APPROVED' });
-          } else {
-            setUserProfile(data);
-          }
+            approvedAt: new Date().toISOString(),
+            approvedBy: 'bootstrap',
+          });
         }
-      } catch (err) {
-        console.error('Error fetching or initializing user profile:', err);
-      } finally {
+
+        const userRef = doc(db, 'users', firebaseUser.uid);
+
+        try {
+          const snap = await getDoc(userRef);
+
+          if (!snap.exists()) {
+            // Create initial record
+            const newProfile: AppUser = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || 'User',
+              photoURL: firebaseUser.photoURL || '',
+              role: isOwner ? 'ADMIN' : 'VIEWER',
+              status: isOwner ? 'APPROVED' : 'PENDING',
+              requestedAt: new Date().toISOString(),
+              approvedAt: isOwner ? new Date().toISOString() : undefined,
+              approvedBy: isOwner ? 'bootstrap' : undefined,
+            };
+
+            await setDoc(userRef, newProfile);
+            setUserProfile(newProfile);
+          } else {
+            const data = snap.data() as AppUser;
+            // Ensure bootstrap admin email always has ADMIN role & APPROVED status
+            if (isOwner && (data.role !== 'ADMIN' || data.status !== 'APPROVED')) {
+              await updateDoc(userRef, {
+                role: 'ADMIN',
+                status: 'APPROVED',
+                approvedAt: new Date().toISOString(),
+                approvedBy: 'bootstrap',
+              });
+              setUserProfile({ ...data, role: 'ADMIN', status: 'APPROVED' });
+            } else {
+              setUserProfile(data);
+            }
+          }
+        } catch (err) {
+          console.warn('Error fetching or initializing user profile:', err);
+        } finally {
+          setLoading(false);
+        }
+      },
+      (error) => {
+        clearTimeout(timeoutTimer);
+        console.warn('onAuthStateChanged error:', error);
         setLoading(false);
       }
-    });
+    );
 
-    return () => unsubscribeAuth();
+    return () => {
+      clearTimeout(timeoutTimer);
+      unsubscribeAuth();
+    };
   }, []);
 
   // Real-time listener on current user profile to react immediately when admin approves or changes role
