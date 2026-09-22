@@ -16,8 +16,10 @@ const config = {
 
 const app = getApps().length > 0 ? getApp() : initializeApp(config);
 
-// CRITICAL: The app will break without specifying firestoreDatabaseId if custom databaseId is used
-export const db = getFirestore(app, config.firestoreDatabaseId);
+export const db =
+  config.firestoreDatabaseId && config.firestoreDatabaseId !== '(default)'
+    ? getFirestore(app, config.firestoreDatabaseId)
+    : getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
