@@ -122,29 +122,29 @@ const MainAppContent: React.FC = () => {
         {activeTab === 'settings' && <SettingsView />}
       </main>
 
-      {/* Mobile-First Bottom Navigation Bar (Visible on mobile/tablet) */}
+      {/* Mobile-First Bottom Navigation Bar (Visible on mobile/tablet < 1024px) */}
       <nav
         aria-label="Mobile Navigation"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-lg"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-2xl"
       >
         <button
           onClick={() => setActiveTab('dashboard')}
           className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition cursor-pointer ${
             activeTab === 'dashboard'
-              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-emerald-400 font-bold'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
-          <span className="text-[10px]">Home</span>
+          <span className="text-[10px]">Dashboard</span>
         </button>
 
         <button
           onClick={() => setActiveTab('customers')}
           className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition cursor-pointer ${
             activeTab === 'customers'
-              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-emerald-400 font-bold'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Users className="w-5 h-5" />
@@ -155,10 +155,10 @@ const MainAppContent: React.FC = () => {
         {isAdmin && (
           <button
             onClick={() => handleOpenAddEmiWithCustomer(undefined)}
-            className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 transition active:scale-95 cursor-pointer"
+            className="flex flex-col items-center justify-center -mt-5 w-11 h-11 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/40 ring-4 ring-slate-900 transition active:scale-95 cursor-pointer"
             title="Create New EMI"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-5 h-5" />
           </button>
         )}
 
@@ -166,8 +166,8 @@ const MainAppContent: React.FC = () => {
           onClick={() => setActiveTab('emi')}
           className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition cursor-pointer ${
             activeTab === 'emi'
-              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-emerald-400 font-bold'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <CreditCard className="w-5 h-5" />
@@ -176,10 +176,10 @@ const MainAppContent: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('overdue')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition cursor-pointer ${
+          className={`relative flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition cursor-pointer ${
             activeTab === 'overdue'
-              ? 'text-red-600 dark:text-red-400 font-bold'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-red-400 font-bold'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <AlertTriangle className="w-5 h-5" />
@@ -190,8 +190,8 @@ const MainAppContent: React.FC = () => {
           onClick={() => setActiveTab('calendar')}
           className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition cursor-pointer ${
             activeTab === 'calendar'
-              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-emerald-400 font-bold'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Calendar className="w-5 h-5" />
