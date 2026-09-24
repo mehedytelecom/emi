@@ -13,7 +13,6 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { DashboardView } from './components/DashboardView';
 import { CustomersView } from './components/CustomersView';
 import { EmiView } from './components/EmiView';
-import { CalendarView } from './components/CalendarView';
 import { OverdueView } from './components/OverdueView';
 import { ReportsView } from './components/ReportsView';
 import { NotificationsView } from './components/NotificationsView';
@@ -28,19 +27,21 @@ import {
   Users,
   CreditCard,
   AlertTriangle,
-  Calendar,
+  FileBarChart,
   Plus,
 } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
   const { loading, currentUser, isAdmin, isPending, isRejectedOrDisabled } = useAuth();
-  const { customers } = useData();
+  const { customers, installments } = useData();
 
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   const [isAddEmiOpen, setIsAddEmiOpen] = useState(false);
   const [selectedCustomerForEmi, setSelectedCustomerForEmi] = useState<string | undefined>(undefined);
   const [selectedCustomerIdForDetail, setSelectedCustomerIdForDetail] = useState<string | null>(null);
+
+  const overdueCount = installments.filter((i) => i.status === 'OVERDUE').length;
 
   // Auth gate checks
   if (loading) {
@@ -67,7 +68,7 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 selection:bg-emerald-500 selection:text-white">
       {/* Offline connectivity warning banner */}
       <OfflineIndicator />
 
@@ -80,7 +81,7 @@ const MainAppContent: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-24 lg:pb-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-24 lg:pb-8 overflow-x-hidden">
         {activeTab === 'dashboard' && (
           <DashboardView
             onOpenAddCustomer={() => setIsAddCustomerOpen(true)}
@@ -103,10 +104,6 @@ const MainAppContent: React.FC = () => {
             onOpenAddEmi={() => handleOpenAddEmiWithCustomer(undefined)}
             onSelectCustomer={(id) => setSelectedCustomerIdForDetail(id)}
           />
-        )}
-
-        {activeTab === 'calendar' && (
-          <CalendarView onSelectCustomer={(id) => setSelectedCustomerIdForDetail(id)} />
         )}
 
         {activeTab === 'overdue' && (
@@ -184,18 +181,23 @@ const MainAppContent: React.FC = () => {
         >
           <AlertTriangle className="w-5 h-5" />
           <span className="text-[10px]">Overdue</span>
+          {overdueCount > 0 && (
+            <span className="absolute -top-1 right-2 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] font-extrabold text-white ring-2 ring-slate-900">
+              {overdueCount}
+            </span>
+          )}
         </button>
 
         <button
-          onClick={() => setActiveTab('calendar')}
+          onClick={() => setActiveTab('reports')}
           className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition cursor-pointer ${
-            activeTab === 'calendar'
+            activeTab === 'reports'
               ? 'text-emerald-400 font-bold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Calendar className="w-5 h-5" />
-          <span className="text-[10px]">Calendar</span>
+          <FileBarChart className="w-5 h-5" />
+          <span className="text-[10px]">Reports</span>
         </button>
       </nav>
 
